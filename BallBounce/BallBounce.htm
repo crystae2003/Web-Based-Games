@@ -1,0 +1,149 @@
+<html>
+<head>
+<title>Bouncing Ball</title>
+</head>
+<body>
+<h1>Bouncing Ball</h1>
+
+<button onclick="start()">Start</button>
+<span id="scoreBox" style="float:right;width:100px;border:1px solid red; text-align:center">Score : 0</span>
+<span id="ballsLeft" style="float:right;width:100px;border:1px solid red; text-align:center">Balls Left : 0</span>
+<div id="ballBox" style="position:relative;margin-top:20px;width:100%;height:500px;border-bottom:5px ridge gray; background-color:#EEEEEE;">
+<div id="WinGameBox" style="display:none;position:absolute;top:200px;left:500px;width:300px;line-height:50px;height:50px;border:5px ridge gray;text-align:center;font-size:30px;font-weight:bold">You Won The Game</div>
+<div id="LostGameBox" style="display:none;position:absolute;top:200px;left:500px;width:300px;line-height:50px;height:50px;border:5px ridge gray;text-align:center;font-size:30px;font-weight:bold">You Lost The Game</div>
+</div>
+<script>
+
+var bBox = document.getElementById("ballBox");
+class Ball {
+	
+	constructor(parent, radius, color, left, top){
+		this.radius = radius;
+		this.left   = left;
+		this.top    = top;
+		this.divobj = document.createElement("DIV");
+		this.divobj.style.cssText = "display:block; position:absolute;left:"+left+"px;top:"+top+"px;width:"+(radius*2)+"px;height:"+(radius*2)+"px;border-radius:"+(radius+1)+"px;border:1px solid black;background-color:"+color+";";
+		this.divobj.onclick = this.clearBall.bind(this);
+		this.divobj.onmouseover = this.highlight.bind(this);
+		this.divobj.onmouseout  = this.lowlight.bind(this);
+		this.dotArray = [];
+		parent.appendChild(this.divobj);
+		this.bBox = document.getElementById("ballBox");
+	}
+	drop(loops){
+		this.loops = loops;
+		this.steps = 50;
+		this.stepNum = 0;
+		this.loopNum = 0;
+		this.bottom = parseInt(this.divobj.parentNode.style.height) - this.radius*2;
+		this.ytotal = this.bottom - this.top ;
+		this.ydist = this.ytotal/((this.steps*(this.steps+1))/2);
+		this.xdist = 3;
+		this.ydir = 1;
+		this.xdir = 1;	if(this.left > window.innerWidth/2){ this.xdir = -1; }	
+		this.bounce();
+	}
+	bounce(){
+		this.stepNum += this.ydir;
+		this.top = this.top + Math.floor(this.ydist * this.stepNum) * this.ydir;
+		if(this.ydir == 1 && this.stepNum==this.steps){ this.top = this.bottom; }
+		this.left = this.left + this.xdist * this.xdir;
+		this.divobj.style.top = this.top + "px";
+		this.divobj.style.left = this.left + "px";
+		if((this.ydir == 1 && this.stepNum < this.steps) || (this.ydir == -1 && this.stepNum > 0)){
+			//NOTHING ???
+		}else{
+			if(this.ydir == -1){
+				this.stepNum = 0;
+				this.loopNum++;
+			}else{
+				if(this.loopNum > this.loops){
+					this.divobj.onclick = null;
+					setTimeout(this.vanishBall.bind(this), 1500);
+					return; 
+				}
+				this.ytotal = Math.floor(this.ytotal / 2);
+				this.steps = Math.floor(this.steps / 2);
+				this.ydist = this.ytotal/((this.steps*(this.steps+1)) / 2);
+				this.stepNum = this.steps + 1;
+			}
+			this.ydir *= -1;
+		}
+		//setTimeout(this.bounce.bind(this), 16);
+		this.drawdot();
+		requestAnimationFrame(this.bounce.bind(this));
+	}
+	drawdot(){
+		var dot = document.createElement("DIV");
+		dot.style.cssText = "position:absolute; left:"+(this.left+this.radius)+"px; top:"+(this.top+this.radius)+"px; background-color:red; width:2px; height:2px;";
+		this.bBox.appendChild(dot);
+		this.dotArray.push(dot);
+	}
+	vanishBall(){
+		this.divobj.style.cssText = "display:none;"
+		for(var i=0; i<this.dotArray.length; i++){
+			this.bBox.removeChild(this.dotArray[i]);
+	//		console.log(this.dotArray);
+		}
+	}
+	clearBall(){
+		score += 5;
+		this.divobj.style.cssText = "display:none;"
+		sBox.innerHTML = "Score :" + score;
+		for(var i=0; i<this.dotArray.length; i++){
+			this.bBox.removeChild(this.dotArray[i]);
+		//		console.log(this.dotArray);
+		}
+
+		if(score >= 100){
+			var win = document.getElementById("WinGameBox");
+			win.style.display = "block";
+			clearInterval(timer);
+			this.divobj.onclick = null;
+		}
+	}
+	highlight(){
+		event.target.style.borderWidth = "3px";
+		//this.clearBall();
+	}
+	lowlight(){
+		event.target.style.borderWidth = "1px";
+	}
+}	
+var sBox = document.getElementById("scoreBox");
+var ballsLeft = document.getElementById("ballsLeft");
+var started = false;
+var timer = null;
+var numBalls = 40;
+var score = 0;
+
+function start(){
+	if(started == false) { 
+		started = true; 
+		timer = setInterval(addBall,1000);
+	
+	event.target.innerHTML = "Stop";
+	} else { 
+		started = false; 
+		clearInterval(timer); 
+		event.target.innerHTML = "Start";
+	}
+}
+
+function addBall(){
+	//var color = "#"+("00000"+Math.floor(Math.random()*16777216).toString(16)).substr(-6);
+	var color = "#"+("00"+Math.floor(Math.random()*4096).toString(16)).substr(-3);
+	var b = new Ball(bBox, 15 + Math.floor(Math.random()*50), color, Math.floor(Math.random()*window.innerWidth*0.9), 20+Math.floor(Math.random()*100));
+	b.drop(4+Math.floor(Math.random()*7));
+	numBalls--;
+	if(numBalls == 0){ clearInterval(timer);  }
+	ballsLeft.innerHTML = "Balls Left :" + numBalls;
+	if(numBalls <= 0){
+		var lost = document.getElementById("LostGameBox");
+		lost.style.display = "block";
+		clearInterval(timer);
+	}
+}
+</script>
+</body>
+</html>

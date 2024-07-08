@@ -1,0 +1,170 @@
+<html>
+<head>
+<style>
+.slot { position:absolute; border:10px dashed; border-radius:60px; width:100px; height:100px; box-shadow: 0px 0px 20px 2px #000;}
+.slot::before { display:block; content:''; width:100px; height:100px; background-color:#333; border-radius:50px; }
+.road { position:absolute; background-image:url(road2.png); height:40px; border-radius:100px; }
+</style>
+</head>
+<body>
+
+<title>Parking Zone</title>
+<h1>Parking Zone</h1>
+
+<div id="gamebox" style="position:relative; width:520px; height:580px; border:3px solid gray; margin:30px;">
+<div class="slot" style="top:0px;   left:200px; border-color:gold;"></div>
+<div class="slot" style="top:120px; left:0px;   border-color:red;"></div>
+<div class="slot" style="top:340px; left:0px;   border-color:royalblue;"></div>
+<div class="slot" style="top:460px; left:200px; border-color:;"></div>
+<div class="slot" style="top:340px; left:400px; border-color:Fuchsia;"></div>
+<div class="slot" style="top:120px; left:400px; border-color:LimeGreen;"></div>
+
+<div id="levelDisplay" style="position:absolute; top:10px; left:10px; font-size:20px; color:cyan; text-align:center; padding:5px; border:5px solid blue; background-color:red; border-radius:13px">level:</div>
+
+<div id="road03" class="road" style="top:269px; left:58px; width:402px; transform:rotate(90deg);"></div>
+<div id="road15" class="road" style="top:160px; left:90px; width:340px;"></div>
+<div id="road24" class="road" style="top:380px; left:90px; width:335px;"></div>
+<div id="road02" class="road" style="top:214px; left:-10px; width:335px; transform:rotate(120deg);"></div>
+<div id="road04" class="road" style="top:210px; left:195px; width:335px; transform:rotate(58deg);"></div>
+<div id="road35" class="road" style="top:330px; left:190px; width:340px; transform:rotate(121deg);"></div>
+<div id="road13" class="road" style="top:332px; left:-10px; width:340px; transform:rotate(60deg);"></div>
+<div id="road25" class="road" style="top:270px; left:65px; width:388px; transform:rotate(151deg);"></div>
+<div id="road14" class="road" style="top:270px; left:70px; width:385px; transform:rotate(29deg);"></div>
+
+<div id="road05" class="road" style="top:100px; left:265px; width:185px; transform:rotate(30deg);"></div>
+<div id="road01" class="road" style="top:100px; left:65px; width:183px; transform:rotate(150deg);"></div>
+<div id="road12" class="road" style="top:270px; left:-25px; width:165px; transform:rotate(90deg);"></div>
+<div id="road45" class="road" style="top:270px; left:375px; width:165px; transform:rotate(90deg);"></div>
+<div id="road23" class="road" style="top:443px; left:70px; width:182px; transform:rotate(32deg);"></div>
+<div id="road34" class="road" style="top:438px; left:270px; width:182px; transform:rotate(150deg);"></div>
+
+<div id="chngLevel" style="display:none; position:absolute; top:270px; left:110px; width:240px; font-size:30px; color:cyan; text-align:center; padding:20px; border:2px solid blue; background-color:red; opacity:0.5">level:</div>
+
+</div>
+
+<script>
+
+var colors = ["yellow","red","blue","black","purple","green"];
+var slotxy = [[0,200], [120,0], [340,0], [460,200], [340,400], [120,400]];
+var carArr = new Array(6);
+var carloc = null; //which car number in each slot eg. at 0th(yellow) slot car # 4(purple) stands & so on...
+var turnAngle = [[0,1,150], [0,2,120], [0,3,90], [0,4,60], [0,5,30], [1,2,90], [1,3,60], [1,4,30], [1,5,0], [2,3,30], [2,4,0], [2,5,-30], [3,4,-30], [3,5,-60], [4,5,-90]];
+var roadList  = null;
+var currLevel = 0;
+var carMoving = false;
+var winArr = [0,1,2,-1,4,5];
+var notMatch = true;
+var levelData = [
+					[[4, 0, 1, -1, 5, 2], ["01","03","05","12","14","23","25","34","45"]],//1
+					[[1, 5, 4, -1, 2, 0], ["01","05","13","23","24","34","35"]],//2
+					[[4, 5, 0, -1, 1, 2], ["02","04","13","14","02","25","35"]],//3
+					[[4, 0, 5, -1, 2, 1], ["01","03","05","14","15","23","24","25","34"]],//4
+					[[1, 5, 4, -1, 0, 2], ["01","02","04","05","14","15","25","23","34"]],//5
+					[[5, 0, 4, -1, 2, 1], ["01","05","12","14","15","23","25","34","45"]],//6
+				];
+
+var gbox = document.getElementById("gamebox");
+for(var i=0; i<colors.length; i++){
+	if(i==3) continue;
+	var car = document.createElement("img");
+	car.tabIndex = i;
+	car.onclick = moveCar;
+	car.src = colors[i]+ "Car.png";1
+	car.style.cssText = "position:absolute; outline:none; top:0px; left:0px; transition:left 2s ease, top 2s ease, transform 2s ease;";
+	gbox.appendChild(car);
+	carArr[i] = car;
+}
+
+
+
+function moveCar(){
+	chngLevel.style.display = "none";
+	if(	carMoving == true ){ return; }
+	var car = event.target;
+	var carnum = car.tabIndex;
+	var from = carloc.indexOf(carnum);
+	var to   = carloc.indexOf(-1);
+	var road = getRoad(from, to);
+	if(road == null) return;
+	//console.log("Moving Car#",carnum, "From", from, "To", to);
+	carMoving = true;
+	car.style.top  = (slotxy[to][0]+47)+"px";
+	car.style.left = (slotxy[to][1]+30)+"px";
+	carloc[to] = carnum;
+	carloc[from] = -1;
+	setTimeout(reorientCars, 2000);
+}
+
+function getRoad(from, to){
+	var road = (from < to ? from+""+to : to+""+from);
+	if(roadList.indexOf(road) == -1) return null;
+	else{
+		return road;
+	}
+}
+
+function reorientCars(){
+	var emptySlot = carloc.indexOf(-1);
+	for(var i=0; i<carloc.length; i++){
+		if(carloc[i] == -1){ continue; }
+		if(getRoad(i, emptySlot)==null){ continue; }
+		var rotation = getAngle(i, emptySlot);
+		var carNum = carloc[i];
+		carArr[carNum].style.transform = "rotate("+rotation+"deg)";
+	}
+		if(JSON.stringify(carloc)==JSON.stringify(winArr)){
+			winGame();
+		}
+	carMoving = false;
+}
+
+function getAngle(from, to){
+	for(var j=0; j<turnAngle.length; j++){
+		if(turnAngle[j][0]==from && turnAngle[j][1]==to){ return turnAngle[j][2]; }
+		else if(turnAngle[j][0]==to && turnAngle[j][1]==from){
+			var angle = turnAngle[j][2] - 180;
+			if(angle < -180) angle += 360;
+			return angle;
+		}
+	}
+}
+function showRoads(){
+	var allRoads = document.getElementsByClassName("road");
+	for(var j=0; j<allRoads.length; j++){ allRoads[j].style.display = "none";}
+
+	for(var j=0; j<roadList.length; j++){
+		document.getElementById("road"+roadList[j]).style.display = "block";
+	}
+}
+function placeCars(){
+	for(var i=0; i<carArr.length; i++){
+		if(i==3) continue;
+		var pos = carloc.indexOf(i);
+		carArr[i].style.top   = (slotxy[pos][0]+47)+"px";
+		carArr[i].style.left  = (slotxy[pos][1]+30)+"px";
+	}
+}
+function winGame(){
+	currLevel++;
+	//console.log("You win the Game");
+	var chngLevel = document.getElementById("chngLevel");
+	chngLevel.style.display = "block";
+	chngLevel.innerHTML = "level:"+(currLevel+1)
+	setupLevel();
+//	return currLevel;
+}
+
+function setupLevel(){
+	carloc   = levelData[currLevel][0];
+	roadList = levelData[currLevel][1];
+	showRoads();
+	placeCars();
+	reorientCars();
+	var levelDisplay = document.getElementById("levelDisplay");
+	levelDisplay.innerHTML = "level : "+(currLevel+1);
+}
+
+setupLevel();
+</script>
+</body>
+</html>

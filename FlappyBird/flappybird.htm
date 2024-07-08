@@ -1,0 +1,148 @@
+<html>
+<head>
+</head>
+<body onkeydown="moveBird()">
+<div id="simBox" style="position:relative; width:600px; height:560px; border:3px solid brown; overflow:hidden; background-color: #9EF">
+	<div id="base" style="position:absolute; width:400px; height:60px; top:500px; background:#CC2; z-index:10"></div>
+	<div id="ground" style="position:absolute; width:400px; height:10px; top:500px; background-image:url(ground.png); z-index:100"></div>
+	<div id="scoreBox" style="position:absolute; right:20px; margin-top:5px; border:4px double #996; width:50px; border-radius:50px; background:#EBDEB0; text-align:center; padding:2px; z-index:100;">0</div>
+</div>
+<script>
+var simBox = dgi("simBox");
+var gap, obstacle, flappyBird;
+var ground = dgi("ground");
+var base = dgi("base");
+var left = 0;
+var gapTop = 100;
+var change;
+var collided = false;
+var gameStart= false;
+var pass=false;
+var score = 0;
+var scoreBox = dgi("scoreBox");
+
+function dgi(input){
+	return document.getElementById(input);
+}
+function addComponents(){
+	if(collided==true) return;
+	obstacle = document.createElement("div");
+	obstacle.style.cssText = "position:absolute; left:-30px; top:-3px; height:502px; width:50px; border:2px solid brown; background-color:#EDA";
+
+	gap = document.createElement("div");
+	gap.style.cssText = "position:absolute; left:-30px; top:150px; height:170px; width:54px; border-top:2px solid brown; border-bottom:2px solid brown; background-color: #9EF";
+
+	flappyBird = document.createElement("div");
+
+	flappyBird.style.cssText = "position:absolute; left:300px; top:200px; height:46px; width:55px; transition: top 0.5s ease, transform 0.3s ease-out";
+	flappyBird.style.background = "url(flappyBird3.gif)";
+	flappyBird.style.backgroundRepeat = "no-repeat";
+
+	ground.style.width = simBox.offsetWidth+"px";
+	base.style.width = simBox.offsetWidth+"px";
+
+	simBox.appendChild(obstacle);
+	simBox.appendChild(gap);
+	simBox.appendChild(flappyBird);
+
+}
+function moveObstacle(){
+	/*
+	console.log(flappyBird.offsetTop>gap.offsetTop)
+	console.log((flappyBird.offsetTop+flappyBird.offsetHeight)<(gap.offsetTop+gap.offsetHeight))
+	console.log(flappyBird.offsetLeft>gap.offsetLeft)
+	console.log((flappyBird.offsetLeft)<(gap.offsetLeft+gap.offsetWidth))
+	*/
+//	console.log(flappyBird.offsetLeft<(gap.offsetLeft+gap.offsetWidth), flappyBird.offsetLeft>gap.offsetLeft,
+//	    flappyBird.offsetTop<gap.offsetTop, (flappyBird.offsetTop+flappyBird.offsetHeight)>(gap.offsetTop+gap.offsetHeight) , (flappyBird.offsetTop+flappyBird.offsetHeight), (gap.offsetTop+gap.offsetHeight));
+/*
+	if( (flappyBird.offsetLeft<(gap.offsetLeft+gap.offsetWidth-20) && flappyBird.offsetLeft>(gap.offsetLeft-50)) &&
+	    (flappyBird.offsetTop<(gap.offsetTop-10) || (flappyBird.offsetTop+flappyBird.offsetHeight)>(gap.offsetTop+gap.offsetHeight)) ){ collided=true; return; }
+*/
+	if( (flappyBird.offsetLeft<(gap.offsetLeft+gap.offsetWidth-10) && flappyBird.offsetLeft>(gap.offsetLeft-50)) &&
+	    (flappyBird.offsetTop<(gap.offsetTop) || (flappyBird.offsetTop+flappyBird.offsetHeight)>(gap.offsetTop+gap.offsetHeight)) || (flappyBird.offsetTop == (508-flappyBird.offsetHeight)) ){
+	    collided=true; gameStart = false; return;
+	}else if((flappyBird.offsetLeft<(gap.offsetLeft+gap.offsetWidth-10) && flappyBird.offsetLeft>(gap.offsetLeft-50)) && pass==false){
+		score++;
+		scoreBox.innerHTML = score+"";
+		pass=true;
+	}else if(pass==true && (flappyBird.offsetLeft>(gap.offsetLeft+gap.offsetWidth-10))){
+	    pass=false;
+	}
+
+	left += 8;
+	obstacle.style.left = left+"px";
+	gap.style.left = left+"px";
+//	console.log(obstacle.offsetLeft, gap.offsetLeft);
+	ground.style.backgroundPosition = left + "px";
+	if(left>(simBox.offsetWidth+(obstacle.offsetWidth-10))){
+		left= -(obstacle.offsetWidth);
+	}
+	requestAnimationFrame(moveObstacle)
+}
+
+var oldChange;
+setInterval(function(){
+				change = (Math.floor(Math.random() * 7) - 3);
+
+				if(oldChange<0) change = (Math.floor(Math.random() * 4));
+				if(oldChange>0) change = (Math.floor(Math.random() * 4) - 3);
+
+//				console.log(oldChange, change)
+				oldChange = change; }
+			, 800);
+function changeGap(){
+	if(collided==true) return;
+	gapTop = gap.offsetTop + change;
+	if(gapTop<50)  gapTop = 50;
+	if(gapTop>300)  gapTop = 300;
+/*	gapTop = gap.offsetTop + Math.floor(Math.random() * 10) - 5;
+	console.log(Math.floor(Math.random() * 40) - 20);
+*/
+	gap.style.top = gapTop+"px";
+	requestAnimationFrame(changeGap)
+
+}
+addComponents();
+
+
+/*
+var over=false;
+function dropBird(){
+	flappyBird.style.transition="top 1s ease-in"
+	flappyBird.style.top = (simBox.offsetHeight+flappyBird.offsetHeight)+"px";
+
+}
+function moveBird(){
+	var key = event.keyCode;
+	birdTop = flappyBird.offsetTop;
+	flappyBird.style.transition="top 0.5s ease"
+	if(key==32){ flappyBird.style.top = (birdTop-40)+"px";	setTimeout(function(){ over=true; },498); console.log("space"); }
+	if(over==false) setTimeout(dropBird,500);
+}
+	setInterval(function(){ over=false; },300)
+*/
+
+
+function dropBird(){
+//	if(collided==true) return;
+	flappyBird.style.transition="top 0.7s ease-in, transform 0.7s ease-in"
+	flappyBird.style.top = (508-flappyBird.offsetHeight)+"px";
+	flappyBird.style.transform = "rotate(-90deg)";
+}
+
+function moveBird(){
+	if(collided==true) return;
+	var key = event.keyCode;
+	flappyBird.style.transition="top 0.2s ease"//, transform 0.3s ease-out";
+	if(key==32){
+		flappyBird.style.top = (flappyBird.offsetTop-80)+"px"; //console.log("space");
+		if(gameStart == false){ moveObstacle(); changeGap(); gameStart=true; }
+		flappyBird.style.transform = "rotate(30deg)";
+	}
+	flappyBird.addEventListener("transitionend", dropBird);
+}
+
+</script>
+</body>
+</html>

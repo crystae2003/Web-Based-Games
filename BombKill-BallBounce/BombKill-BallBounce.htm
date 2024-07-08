@@ -1,0 +1,120 @@
+<html>
+<head>
+<title>BombExplodeBall</title>
+<style>
+</style>
+</head>
+<body>
+<h1>Bomb Kill-Bouncing Ball</h1>
+<button onclick="bounce()">Add Ball</button>
+<div id="gameBox" style="position:relative;margin-top:20px;width:700px;height:500px;border:5px ridge gray;background-color:#EEEEEE;" onclick="showPic()"></div>
+<script>
+
+
+class Ball{
+	constructor(parent, color, radius, leftPos, topPos, bgcolor){
+		this.radius = radius;
+		this.left = leftPos;
+		this.top = topPos;
+		this.maxtop = parseInt(parent.style.height) - radius*2;
+		this.maxleft = parseInt(parent.style.width) - radius*2;
+		this.side = 0;
+		this.maxsteps = 50;
+		this.steptop = 0;
+		this.stepleft = 0;
+		this.removed = false;
+		this.divCircle = document.createElement("DIV");
+		this.divCircle.style.cssText = "width:"+(radius*2)+"px;height:"+(radius*2)+"px;border:1px solid "+color+"; position:absolute; left:"+leftPos+"px; top:"+topPos+"px; border-radius:"+radius+"px; background-color:"+bgcolor;
+		parent.appendChild(this.divCircle);
+	}	
+	
+	start(){
+		if(this.removed) return;
+		var nextside = (this.side +(1 + (Math.floor(Math.random()*3)))) % 4;
+		var nextleft, nexttop;
+		switch(nextside){
+			case 0: nextleft = Math.floor(Math.random()*this.maxleft); nexttop = 0; break;
+			case 1: nextleft = this.maxleft; nexttop = Math.floor(Math.random()*this.maxtop); break;
+			case 2: nextleft =  Math.floor(Math.random()*this.maxleft); nexttop = this.maxtop; break;
+			case 3: nextleft = 0; nexttop = Math.floor(Math.random()*this.maxtop); break;
+		}
+		var difftop = nexttop - this.top ;
+		var diffleft = nextleft - this.left;
+		this.steptop = difftop/this.maxsteps;
+		this.stepleft = diffleft/this.maxsteps;
+//		console.log("start",this.side,nextside,nextleft,nexttop,difftop,diffleft);
+		this.side = nextside;
+//		console.log("begin",this.top, this.left);
+		this.moveBall();
+		
+	}
+	moveBall(){
+		if(this.removed) return;
+		if(this.maxsteps > 0){
+			this.top = this.top + this.steptop;
+			this.left = this.left + this.stepleft;
+			this.divCircle.style.top = Math.floor(this.top) + "px";
+			this.divCircle.style.left = Math.floor(this.left) + "px";
+			this.maxsteps--;
+			this.checkCollision();
+//				console.log("move",this.top, this.left);
+			requestAnimationFrame(this.moveBall.bind(this));
+			return;
+			}
+		this.maxsteps = 50;
+		this.start();
+	}	
+	checkCollision(){
+		if(grenadeActive == false) return;
+		if((Math.abs(grenadeTop - this.top) <= this.radius*2) && (Math.abs(grenadeLeft - this.left) <= this.radius*2)){
+			this.removed = true;
+//			console.log("overlapped");
+			gameBox.removeChild(this.divCircle);
+			grenade.src = "bombExplode.gif";
+			grenade.style.left = (grenadeLeft - 10) + "px";
+			grenade.style.top  = (grenadeTop  - 30) + "px";
+			grenade.style.width = "120px";
+			grenadeActive = false;
+			numBalls--;
+			setTimeout(this.removeExplosion.bind(this), 1200);
+		}
+	}
+	removeExplosion(){
+		gameBox.removeChild(grenade);
+		grenade = null;
+	}
+}
+var grenade = null;
+var grenadeTop = 0, grenadeLeft = 0, grenadeActive = false;
+var gameBox = document.getElementById("gameBox");
+var numBalls = 0
+
+function showPic(){
+	if(numBalls == 0){ return; }
+	if(grenade == null){
+		grenade = new Image();
+		grenade.src = "bomb.png";
+//		console.log("Showed grenade", event);
+		grenade.style.position = "absolute";
+		grenadeLeft = (event.offsetX - 40); 
+		if(grenadeLeft < 0) grenadeLeft=0; 
+		if(grenadeLeft > parseInt(gameBox.style.width) - 80 - 10) grenadeLeft = parseInt(gameBox.style.width) - 80 - 10;
+		grenade.style.left = grenadeLeft + "px";
+		grenadeTop = (event.offsetY - 40)
+		if(grenadeTop < 0){grenadeTop = 0;} 
+		if(grenadeTop > parseInt(gameBox.style.height) - 80 - 10){grenadeTop = parseInt(gameBox.style.height) - 80 - 10;}
+		grenade.style.top = grenadeTop + "px";
+		grenade.style.width = "90px"
+		grenadeActive = true;
+		gameBox.appendChild(grenade);
+	}
+}
+function bounce(){
+	var ball = new Ball(gameBox, "#088888", 25, 260, 0, "#00FFFF");
+	ball.start();
+	numBalls++;
+}
+</script>  
+
+</body>
+</html>
